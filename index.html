@@ -1,0 +1,1034 @@
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<style>
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:700;font-display:swap;src:url('assets/fonts/barlow-condensed-700.woff2') format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:800;font-display:swap;src:url('assets/fonts/barlow-condensed-800.woff2') format('woff2')}
+*{box-sizing:border-box;margin:0;padding:0}
+#app{width:100%;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));max-width:440px;margin:0 auto;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
+h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.screen{display:none}.screen.active{display:block}
+
+/* SETUP */
+#setup-screen{padding:18px 14px}
+.setup-panel{border:1px solid #e5e7eb;border-radius:18px;padding:18px 16px 16px;background:#fff;box-shadow:0 12px 34px rgba(15,23,42,0.10);text-align:center}
+.game-title{font-size:48px;font-weight:800;letter-spacing:0;color:#111827;line-height:0.95;margin-bottom:3px}
+.game-sub{font-size:15px;color:#64748b;margin-bottom:16px}
+.setup-preview{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:176px;margin:0 auto 18px;padding:7px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 2px rgba(15,23,42,0.12),0 8px 24px rgba(15,23,42,0.12)}
+.preview-cell{height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,0.35)}
+.preview-cell.p{background:#d63384}.preview-cell.t{background:#0891b2}
+.setup-fields{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.player-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #e5e7eb;border-radius:12px;background:#f8fafc}
+.player-row label{font-size:14px;color:#111827;flex:1;text-align:left;font-weight:700}
+.player-row select{font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#111827}
+.setup-actions{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.btn-start{width:100%;padding:14px;font-size:16px;font-weight:700;border-radius:12px;border:none;background:#0891b2;color:#fff;cursor:pointer;letter-spacing:0.3px;box-shadow:0 8px 18px rgba(8,145,178,0.24)}
+.btn-help{font-size:13px;padding:12px 16px;border-radius:12px;border:2px solid #64748b;background:#fff;color:#334155;cursor:pointer;font-weight:700}
+
+/* GAME */
+#game-screen{padding:4px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 4px}
+.top-actions{display:flex;gap:8px;align-items:center}
+.turn-info{display:flex;flex-direction:column;gap:1px}
+.turn-label{font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.5px}
+.turn-name{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.btn-small{font-size:12px;padding:6px 12px;border-radius:8px;border:2px solid currentColor;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer}
+.btn-help{margin-top:10px;font-size:13px;padding:9px 16px;border-radius:10px;border:1.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer}
+
+/* BOARD */
+.board-wrap{display:flex;justify-content:center;margin-bottom:8px}
+#board-canvas{display:block;width:min(360px,100%);height:auto;cursor:pointer;border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.12)}
+
+/* DOMINO TRAY */
+.domino-tray{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding:10px 12px;border:1px solid var(--color-border-tertiary);border-radius:14px;background:var(--color-background-secondary);min-height:110px}
+#selected-domino-canvas{width:88px;height:88px;border-radius:10px;border:1.5px dashed var(--color-border-secondary);background:var(--color-background-primary);cursor:pointer;touch-action:manipulation;flex:0 0 auto}
+.domino-tray-controls{font-size:12px;line-height:1.5;color:var(--color-text-secondary);flex:1;text-align:left}
+.totem-check{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:13px;color:var(--color-text-primary);font-weight:500}
+.totem-check input{width:18px;height:18px;accent-color:#0891b2}
+
+/* STATUS */
+.status-bar{font-size:13px;color:var(--color-text-secondary);text-align:center;padding:4px;min-height:22px}
+.status-bar.error{color:#c0392b;font-weight:500}
+.status-bar.info{color:#0F6E56;font-weight:500}
+
+/* ACTIONS */
+.action-btns{display:flex;gap:8px;margin-bottom:8px}
+.action-btns button{flex:1;font-size:13px;font-weight:500;padding:10px 6px;border-radius:10px;border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer}
+.action-btns button:disabled{opacity:0.3;cursor:default;background:var(--color-background-secondary)}
+
+/* RESERVES */
+.hidden{display:none!important}
+.reserves{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.reserve-panel{border-radius:14px;padding:10px;background:var(--color-background-secondary);border:2.5px solid transparent}
+.reserve-panel.active-player{background:var(--color-background-primary);box-shadow:0 2px 10px rgba(0,0,0,0.10)}
+.reserve-header{font-size:12px;color:var(--color-text-secondary);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.reserve-header .pname{font-weight:700;font-size:13px}
+.totem-dots{display:grid;grid-template-rows:1fr 1fr;align-items:center;justify-items:center;height:62px;margin-left:2px;margin-bottom:14px}
+.totem-dot{width:13px;height:13px;border-radius:50%;border:2px solid currentColor;transition:opacity 0.2s}
+.totem-dot.used{opacity:0.18}
+.stacks-wrap{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.stack-group{display:flex;flex-direction:column;align-items:center;gap:3px}
+.domino-btn{display:flex;flex-direction:column;align-items:stretch;width:36px;height:62px;border-radius:7px;cursor:pointer;border:2px solid transparent;transition:all 0.12s;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.18)}
+.domino-btn.sel{border-color:#FFD700;box-shadow:0 0 0 3px rgba(255,215,0,0.4)}
+.domino-btn .dh{display:flex;align-items:center;justify-content:center;flex:1;font-size:22px;font-weight:800;color:#fff}
+.domino-btn .dh:first-child{border-bottom:1.5px solid rgba(255,255,255,0.25)}
+.stack-cnt{font-size:10px;color:var(--color-text-tertiary);font-weight:500}
+
+/* END */
+#end-screen{padding:20px 16px;text-align:center}
+.end-title{font-size:26px;font-weight:700;margin-bottom:20px;color:var(--color-text-primary);letter-spacing:-0.5px}
+.score-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px}
+.score-table th{font-weight:600;padding:8px 6px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary);font-size:12px;text-transform:uppercase;letter-spacing:0.4px}
+.score-table td{padding:10px 6px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.score-table tr.winner td{font-weight:700;color:#0891b2}
+.score-table tr.winner td:last-child{font-size:17px}
+.btn-restart{padding:12px 32px;border-radius:12px;border:none;background:#0891b2;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+
+/* RULES MODAL */
+.modal-backdrop{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));background:rgba(0,0,0,0.38)}
+.modal-backdrop.active{display:flex}
+.rules-modal{width:min(420px,100%);max-height:calc(100dvh - 28px);overflow:auto;border-radius:14px;border:1px solid #e5e7eb;background:#fff;box-shadow:0 18px 50px rgba(0,0,0,0.28);color:#111827;font-family:Arial,sans-serif}
+.rules-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #e5e7eb;background:#fff}
+.rules-head h3{font-size:22px;font-weight:800;letter-spacing:0;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
+.rules-close{width:34px;height:34px;border-radius:9px;border:1.5px solid #9ca3af;background:#fff;color:#111827;font-size:22px;line-height:1;cursor:pointer}
+.rules-body{padding:14px 16px 16px;text-align:left}
+.rules-body section+section{margin-top:14px}
+.rules-body h4{font-size:15px;margin-bottom:5px;color:#111827;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
+.rules-body p,.rules-body li{font-size:13px;line-height:1.35;color:#374151;font-family:Arial,sans-serif}
+.rules-body ul{padding-left:18px}
+.rules-body li+li{margin-top:4px}
+
+@media (min-width:760px) and (orientation:landscape){
+  #app{max-width:960px;height:100dvh;display:flex;align-items:center;justify-content:center}
+  #setup-screen{width:min(420px,100%);margin:0 auto}
+  #game-screen{width:100%;padding:8px;display:grid;grid-template-columns:minmax(360px,520px) minmax(320px,380px);grid-template-rows:auto auto;column-gap:28px;row-gap:12px;align-items:center;justify-content:center}
+  .game-layout{display:contents}
+  .board-column{grid-column:1;grid-row:1 / span 2;display:flex;justify-content:flex-end}
+  .side-column{grid-column:2;grid-row:2;align-self:start}
+  .top-bar{grid-column:2;grid-row:1;padding:0;margin-bottom:0}
+  #board-canvas{width:min(520px,calc(100dvh - 48px))}
+  .board-wrap{margin:0}
+  .domino-tray{margin-bottom:10px}
+  .reserves{grid-template-columns:1fr;gap:10px}
+  .reserve-panel{padding:12px}
+  .reserve-header .pname{font-size:15px}
+  .stacks-wrap{gap:10px}
+  .domino-btn{width:42px;height:70px}
+  .domino-btn .dh{font-size:25px}
+  .totem-dots{height:70px;margin-bottom:14px}
+  .totem-dot{width:15px;height:15px}
+}
+
+@media (max-width:430px){
+  #setup-screen{padding:14px 10px}
+  .setup-panel{padding:16px 14px}
+  .game-title{font-size:44px}
+  .setup-preview{width:164px}
+  .preview-cell{height:35px;font-size:25px}
+  #game-screen{padding:0}
+  .top-bar{margin-bottom:6px}
+  .top-actions{gap:6px}
+  .btn-small{padding:6px 10px}
+  #board-canvas{width:min(340px,100%)}
+  .board-wrap{margin-bottom:6px}
+  .domino-tray{min-height:92px;padding:8px 10px;gap:10px;margin-bottom:6px}
+  #selected-domino-canvas{width:76px;height:76px}
+  .domino-tray-controls{font-size:11px;line-height:1.35}
+  .totem-check{margin-top:7px;font-size:12px}
+  .status-bar{font-size:12px;min-height:18px;padding:2px}
+  .reserves{gap:8px;margin-bottom:0}
+  .reserve-panel{padding:8px}
+  .reserve-header{margin-bottom:6px}
+  .domino-btn{width:34px;height:58px}
+  .domino-btn .dh{font-size:21px}
+  .totem-dots{height:58px}
+  .rules-modal{max-height:calc(100dvh - 24px)}
+  .rules-body{padding:12px 14px 14px}
+}
+</style>
+
+<h2 class="sr-only">Kumata lautapeli, 2 pelaajan versio</h2>
+<div id="app">
+
+<div id="setup-screen" class="screen active">
+  <div class="setup-panel">
+    <div class="game-title">Kumata</div>
+    <div class="game-sub">2 pelaajan versio</div>
+    <div class="setup-preview" aria-hidden="true">
+      <div class="preview-cell p">3</div><div class="preview-cell t">1</div><div class="preview-cell p">4</div><div class="preview-cell t">2</div>
+      <div class="preview-cell t">2</div><div class="preview-cell p"></div><div class="preview-cell t">3</div><div class="preview-cell p">1</div>
+      <div class="preview-cell p">4</div><div class="preview-cell t">2</div><div class="preview-cell p">1</div><div class="preview-cell t"></div>
+    </div>
+    <div class="setup-fields">
+      <div class="player-row">
+        <label><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#d63384;margin-right:6px;vertical-align:-1px"></span>Pelaaja 1 (pinkki)</label>
+        <select id="p1-type"><option value="human">Ihminen</option><option value="ai">AI</option></select>
+      </div>
+      <div class="player-row">
+        <label><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0891b2;margin-right:6px;vertical-align:-1px"></span>Pelaaja 2 (turkoosi)</label>
+        <select id="p2-type"><option value="ai" selected>AI</option><option value="human">Ihminen</option></select>
+      </div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn-start" onclick="startGame()">Aloita peli</button>
+      <button class="btn-help" onclick="openRules()">Ohjeet</button>
+    </div>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="top-bar">
+    <div class="turn-info"><div class="turn-label">Vuoro</div><div class="turn-name" id="turn-name">—</div></div>
+    <div class="top-actions">
+      <button class="btn-small" onclick="openRules()">Ohjeet</button>
+      <button class="btn-small" onclick="showSetup()">Uusi peli</button>
+    </div>
+  </div>
+  <div class="game-layout">
+    <div class="board-column">
+      <div class="board-wrap"><canvas id="board-canvas" width="360" height="360"></canvas></div>
+    </div>
+    <div class="side-column">
+      <div id="domino-tray" class="domino-tray">
+        <canvas id="selected-domino-canvas" width="96" height="96"></canvas>
+        <div class="domino-tray-controls">
+          <div id="domino-tray-text">Valitse domino reservistä. Klikkaa valittua dominoa tässä ruudussa pyörittääksesi.</div>
+          <label class="totem-check"><input type="checkbox" id="totem-checkbox"> <span class="totem-label-text">Aseta toteemi</span></label>
+        </div>
+      </div>
+      <div class="status-bar" id="status-bar"></div>
+      <div class="action-btns">
+        <button id="btn-skip" onclick="skipTurn()">Ohita vuoro</button>
+      </div>
+      <div class="reserves" id="reserves"></div>
+    </div>
+  </div>
+</div>
+
+<div id="end-screen" class="screen">
+  <div class="end-title" id="end-title">Peli päättyi!</div>
+  <table class="score-table">
+    <thead><tr><th>Pelaaja</th><th>Laudalla</th><th>Reservi</th><th>Tooteemi</th><th>Yht.</th></tr></thead>
+    <tbody id="score-body"></tbody>
+  </table>
+  <button class="btn-restart" onclick="showSetup()">Pelaa uudelleen</button>
+</div>
+</div>
+
+<div id="rules-modal" class="modal-backdrop" onclick="closeRules(event)" aria-hidden="true">
+  <div class="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-title" onclick="event.stopPropagation()">
+    <div class="rules-head">
+      <h3 id="rules-title">Ohjeet</h3>
+      <button class="rules-close" onclick="closeRules()" aria-label="Sulje ohjeet">×</button>
+    </div>
+    <div class="rules-body">
+      <section>
+        <h4>Tavoite</h4>
+        <p>Kerää eniten pisteitä omalla värilläsi näkyvistä puolikkaista, reserviin jääneistä dominoista ja toteemeista.</p>
+      </section>
+      <section>
+        <h4>Vuoro</h4>
+        <ul>
+          <li>Valitse jokin oman reservipinosi päällimmäisistä dominoista.</li>
+          <li>Pyöritä valittua dominoa klikkaamalla sitä valintaruudussa tai reservissä.</li>
+          <li>Aseta domino laudalle klikkaamalla sopivaa ruutua.</li>
+        </ul>
+      </section>
+      <section>
+        <h4>Sijoittaminen</h4>
+        <ul>
+          <li>Molempien puolikkaiden pitää peittää sama arvo. Tyhjä puolikas sopii minkä tahansa arvon päälle.</li>
+          <li>Domino voi mennä suoraan laudalle tai kahden eri pelissä olevan dominon päälle.</li>
+          <li>Pinoamisessa molempien alla olevien puolikkaiden pitää olla samalla korkeudella.</li>
+          <li>Yhtä dominoa ei saa peittää kokonaan toisella dominolla.</li>
+        </ul>
+      </section>
+      <section>
+        <h4>Toteemit</h4>
+        <ul>
+          <li>Voit asettaa toteemin juuri pelaamallesi dominolle, jos sinulla on toteemeja jäljellä.</li>
+          <li>Toteemi lukitsee dominon: sitä ei voi enää peittää.</li>
+          <li>Toteemi antaa lopussa pisteitä korkeutensa mukaan. Käyttämätön toteemi on -1 piste.</li>
+        </ul>
+      </section>
+      <section>
+        <h4>Jos et voi pelata</h4>
+        <p>Jos mikään päällimmäinen domino ei sovi, sinun täytyy siirtää päällimmäinen domino omaksi uudeksi reservipinokseen. Jos et voi tehdä sitäkään, peli päättyy.</p>
+      </section>
+      <section>
+        <h4>Pelin loppu</h4>
+        <p>Peli päättyy, kun vuorossa olevalla pelaajalla ei ole reservejä tai hänellä ei ole mahdollista siirtoa eikä uutta pinoa voi luoda. Tasapisteissä korkeimmalla oleva toteemi ratkaisee.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROWS=6,COLS=6,CELL=60;
+const P_COLOR='#d63384',T_COLOR='#0891b2';
+const P_LIGHT='#fce7f3',T_LIGHT='#cffafe';
+const P_DARK='#9d174d',T_DARK='#155e75';
+
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+
+
+// Board cell: {clan:'p'|'t', boardVal:0-4, stack:[{clan,val,dominoId}], locked:false}
+// boardVal 0 = blank
+
+function makeBoardCells(){
+  const tileClans=[
+    ['p','t','t','p'], // rot 0
+    ['t','p','p','t'], // rot 1
+  ];
+
+  // Per-colour budget across all 9 tiles: 1×4, 2×4, 3×3, 4×3, 0×4 = 18
+  let pBudget={0:4,1:4,2:4,3:3,4:3};
+  let tBudget={0:4,1:4,2:4,3:3,4:3};
+
+  function pickFrom(budget, exclude1, exclude2){
+    // pick a random value from budget that isn't the same as both exclude values
+    let candidates=Object.keys(budget).map(Number).filter(v=>budget[v]>0);
+    // prefer values that break the "3 same" constraint
+    let preferred=candidates.filter(v=>!(v===exclude1&&v===exclude2));
+    let pool=preferred.length?preferred:candidates;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+
+  let cells=[];
+  for(let r=0;r<ROWS;r++){cells.push([]);for(let c=0;c<COLS;c++)cells[r].push(null);}
+
+  for(let tr=0;tr<3;tr++){
+    for(let tc=0;tc<3;tc++){
+      let rot=Math.floor(Math.random()*2);
+      let clans=tileClans[rot];
+      let pos=[[tr*2,tc*2],[tr*2,tc*2+1],[tr*2+1,tc*2],[tr*2+1,tc*2+1]];
+      let tileVals=[];
+
+      // Assign values one by one, ensuring at each step we don't lock into ≥3 same
+      for(let i=0;i<4;i++){
+        let clan=clans[i];
+        let budget=clan==='p'?pBudget:tBudget;
+        let v;
+        // Try up to 20 times to pick a value that keeps ≥3 distinct in the tile so far
+        for(let attempt=0;attempt<20;attempt++){
+          v=pickFrom(budget, tileVals[0], tileVals[1]);
+          // Check: if we add v, does the tile so far still allow ending with ≥3 distinct?
+          let tentative=[...tileVals,v];
+          // Count how many of each value appear
+          let counts={};
+          for(let x of tentative) counts[x]=(counts[x]||0)+1;
+          let maxCount=Math.max(...Object.values(counts));
+          // If we already have 4 placed and only 1-2 distinct, reject (but can't happen with i<4)
+          // If i==3 (last slot): final tile must have ≥3 distinct
+          if(i===3){
+            if(Object.keys(counts).length>=3) break; // good
+            // try again
+          } else {
+            // For earlier slots: reject only if it's impossible to reach 3 distinct later
+            // i.e. if 3 of 4 slots would be the same value
+            if(maxCount<=2) break; // safe
+            if(maxCount===3&&i===2) continue; // last slot couldn't fix it
+            break;
+          }
+        }
+        tileVals.push(v);
+        budget[v]--;
+        if(budget[v]===0) delete budget[v];
+      }
+
+      // Final safety: if tile has <3 distinct values, swap one duplicate with a neighbour value
+      let counts={};
+      for(let v of tileVals) counts[v]=(counts[v]||0)+1;
+      if(Object.keys(counts).length<3){
+        // find a duplicate and replace with something from budget
+        for(let i=0;i<4;i++){
+          let v=tileVals[i];
+          if(counts[v]>1){
+            let clan=clans[i];
+            let budget=clan==='p'?pBudget:tBudget;
+            let existing=new Set(tileVals);
+            let alts=Object.keys(budget).map(Number).filter(x=>!existing.has(x));
+            if(alts.length){
+              let newV=alts[Math.floor(Math.random()*alts.length)];
+              budget[tileVals[i]]=(budget[tileVals[i]]||0)+1; // return old
+              tileVals[i]=newV;
+              budget[newV]--;
+              if(budget[newV]===0) delete budget[newV];
+              counts[v]--;
+              counts[newV]=(counts[newV]||0)+1;
+              if(Object.keys(counts).filter(k=>counts[k]>0).length>=3) break;
+            }
+          }
+        }
+      }
+
+      for(let i=0;i<4;i++){
+        let [r,c]=pos[i];
+        cells[r][c]={clan:clans[i],boardVal:tileVals[i],stack:[],locked:false};
+      }
+    }
+  }
+  return cells;
+}
+
+// All 15 traditional dominoes with values 0-4
+function makeDominoes(clan){
+  let doms=[];
+  for(let a=0;a<=4;a++) for(let b=a;b<=4;b++) doms.push({a,b,clan,id:clan+'_'+doms.length});
+  return doms; // exactly 15
+}
+
+let G={};
+
+function openRules(){
+  let modal=document.getElementById('rules-modal');
+  if(!modal) return;
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function closeRules(event){
+  if(event&&event.target&&event.target.id!=='rules-modal') return;
+  let modal=document.getElementById('rules-modal');
+  if(!modal) return;
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden','true');
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') closeRules();
+});
+
+function startGame(){
+  let p1t=document.getElementById('p1-type').value;
+  let p2t=document.getElementById('p2-type').value;
+  let d0=shuffle(makeDominoes('p'));
+  let d1=shuffle(makeDominoes('t'));
+  let players=[
+    {clan:'p',type:p1t,name:p1t==='ai'?'AI (Pelaaja 1)':'Sinä (Pelaaja 1)',stacks:makeStacks(d0,3),totemLeft:2},
+    {clan:'t',type:p2t,name:p2t==='ai'?'AI (Pelaaja 2)':'Vastustaja (Pelaaja 2)',stacks:makeStacks(d1,3),totemLeft:2}
+  ];
+  let t0=stackTopTotal(players[0].stacks),t1=stackTopTotal(players[1].stacks);
+  G={players,board:makeBoardCells(),current:t0>=t1?0:1,
+     phase:'select',selStack:null,selDom:null,orient:0,hover:null,pendingTotem:false,over:false,lastPlaced:null,awaitingTotem:false};
+  showScreen('game-screen');
+  renderAll();
+  if(G.players[G.current].type==='ai') setTimeout(aiTurn,700);
+}
+
+function makeStacks(doms,n){
+  let d=[...doms],s=[];
+  let sz=Math.floor(d.length/n);
+  for(let i=0;i<n;i++) s.push(d.splice(0,i<n-1?sz:d.length));
+  return s;
+}
+
+function stackTopTotal(stacks){
+  return stacks.reduce((sum,s)=>sum+(s.length?s[s.length-1].a+s[s.length-1].b:0),0);
+}
+
+// Orient: 0=AB→, 1=BA→, 2=A↓B, 3=B↓A
+function getDominoCells(r,c,orient){
+  if(orient===0) return [[r,c],[r,c+1]];
+  if(orient===1) return [[r,c+1],[r,c]]; // flipped horiz
+  if(orient===2) return [[r,c],[r+1,c]];
+  return [[r+1,c],[r,c]]; // flipped vert
+}
+
+function getOrientLabel(orient){
+  return['AB→','BA→','A↓B','B↓A'][orient];
+}
+function rotateSelectedDomino(){
+  if(G.awaitingTotem||!G.selDom) return;
+  const cycle=[0,2,1,3];
+  let i=cycle.indexOf(G.orient);
+  G.orient=cycle[(i+1+cycle.length)%cycle.length];
+  renderAll();
+}
+
+function topOf(r,c){
+  let cell=G.board[r][c];
+  if(cell.stack.length===0) return {clan:cell.clan,val:cell.boardVal,height:0,locked:cell.locked};
+  let top=cell.stack[cell.stack.length-1];
+  return {clan:top.clan,val:top.val,height:cell.stack.length,locked:cell.locked,dominoId:top.dominoId};
+}
+
+function valMatch(dv,bv){
+  if(dv===0||bv===0) return true; // blank matches anything
+  return dv===bv;
+}
+
+function canPlace(dom,cells){
+  // cells[0] gets dom.a, cells[1] gets dom.b
+  for(let [r,c] of cells){
+    if(r<0||r>=ROWS||c<0||c>=COLS) return false;
+    if(G.board[r][c].locked) return false;
+  }
+  let [r0,c0]=cells[0],[r1,c1]=cells[1];
+  let h0=G.board[r0][c0].stack.length, h1=G.board[r1][c1].stack.length;
+  let t0=topOf(r0,c0), t1=topOf(r1,c1);
+
+  // Both on board level (h=0): just need to fit on tile
+  if(h0===0&&h1===0) return valMatch(dom.a,t0.val)&&valMatch(dom.b,t1.val);
+
+  // Stacking: both must be same height > 0, different cells
+  if(h0>0&&h1>0){
+    if(r0===r1&&c0===c1) return false; // same cell
+    if(h0!==h1) return false;
+    if(t0.locked||t1.locked) return false;
+    if(t0.dominoId&&t0.dominoId===t1.dominoId) return false; // cannot completely cover one domino
+    return valMatch(dom.a,t0.val)&&valMatch(dom.b,t1.val);
+  }
+  // One on board, one on domino: not allowed for stacking
+  // But placing flat on board across boundary is ok if both h=0
+  return false;
+}
+
+function hasAnyMove(player){
+  for(let s of player.stacks){
+    if(!s.length) continue;
+    let dom=s[s.length-1];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) for(let o=0;o<4;o++){
+      if(canPlace(dom,getDominoCells(r,c,o))) return true;
+    }
+  }
+  return false;
+}
+
+function doPlace(dom,cells,withTotem){
+  let [r0,c0]=cells[0],[r1,c1]=cells[1];
+  G.board[r0][c0].stack.push({clan:dom.clan,val:dom.a,dominoId:dom.id});
+  G.board[r1][c1].stack.push({clan:dom.clan,val:dom.b,dominoId:dom.id});
+  if(withTotem){
+    G.board[r0][c0].locked=true;
+    G.board[r1][c1].locked=true;
+  }
+}
+
+function placeSelected(){
+  if(G.selDom===null||!G.hover) return;
+  let player=G.players[G.current];
+  let cells=getDominoCells(G.hover[0],G.hover[1],G.orient);
+  if(!canPlace(G.selDom,cells)){setStatus('Ei sovi tähän!','error');return;}
+  const cb=document.getElementById('totem-checkbox');
+  const useTotem=!!(cb&&cb.checked&&player.totemLeft>0);
+  doPlace(G.selDom,cells,useTotem);
+  if(useTotem) player.totemLeft--;
+  G.lastPlaced=useTotem?cells:null;
+  let s=player.stacks[G.selStack];
+  s.pop();
+  if(s.length===0) player.stacks.splice(G.selStack,1);
+  G.selDom=null;G.selStack=null;G.hover=null;G.phase='select';G.awaitingTotem=false;G.pendingTotem=false;
+  if(cb) cb.checked=false;
+  advanceTurn();
+}
+function placeTotemOnLast(){ return; }
+
+function skipTurn(){
+  let player=G.players[G.current];
+  if(hasAnyMove(player)){setStatus('Sinulla on mahdollinen siirto!','error');return;}
+  if(!canCreateNewStack(player)){endGame();return;}
+  // Trigger "choose a stack to set aside" mode
+  G.phase='skip_choose';
+  setStatus('Et voi sijoittaa – valitse pino siirrettäväksi sivuun','error');
+  renderAll();
+}
+
+function canCreateNewStack(player){
+  return player.stacks.some(s=>s.length>1);
+}
+
+function chooseStackToSetAside(si){
+  let player=G.players[G.current];
+  if(!player.stacks[si]||player.stacks[si].length<=1){endGame();return;}
+  let dom=player.stacks[si].pop();
+  if(player.stacks[si].length===0) player.stacks.splice(si,1);
+  player.stacks.push([dom]);
+  G.phase='select';
+  advanceTurn();
+}
+
+function toggleTotem(){
+  let player=G.players[G.current];
+  if(player.totemLeft<=0||G.selDom===null) return;
+  G.pendingTotem=!G.pendingTotem;
+  renderAll();
+  setStatus(G.pendingTotem?'Tooteemi asetetaan dominon kanssa – napsauta lauta':'Tooteemi peruttu','info');
+}
+
+function finishWithoutTotem(){
+  if(G.awaitingTotem){
+    G.awaitingTotem=false;
+    G.lastPlaced=null;
+    advanceTurn();
+    return;
+  }
+}
+function skipOrContinueTurn(){
+  if(G.awaitingTotem) return finishWithoutTotem();
+  return skipTurn();
+}
+function advanceTurn(){
+  let next=(G.current+1)%2;
+  let np=G.players[next];
+  // End condition 1: next player has no reserve dominoes at all
+  let noStacks=!np.stacks.length||np.stacks.every(s=>!s.length);
+  if(noStacks){endGame();return;}
+  G.current=next;G.phase='select';G.selDom=null;G.selStack=null;G.hover=null;G.pendingTotem=false;
+  renderAll();setStatus('');
+  if(G.players[G.current].type==='ai'){
+    setTimeout(aiTurn,500);
+  } else {
+    // End condition 2: human has no moves and can't create new stack either
+    if(!hasAnyMove(np)){
+      if(!canCreateNewStack(np)){endGame();return;}
+      // Auto-trigger skip mode for human
+      G.phase='skip_choose';
+      setStatus('Et voi sijoittaa – valitse pino siirrettäväksi sivuun','error');
+      renderAll();
+    }
+  }
+}
+
+function aiTurn(){
+  let player=G.players[G.current];
+  if(!hasAnyMove(player)){
+    if(!canCreateNewStack(player)){endGame();return;}
+    // AI automatically picks first available stack to set aside
+    let moved=false;
+    for(let i=0;i<player.stacks.length;i++){
+      if(player.stacks[i].length>1){
+        let dom=player.stacks[i].pop();
+        if(player.stacks[i].length===0) player.stacks.splice(i,1);
+        player.stacks.push([dom]);
+        moved=true;
+        break;
+      }
+    }
+    if(!moved){endGame();return;}
+    advanceTurn();
+    return;
+  }
+  let best=null,bestScore=-9999;
+  for(let si=0;si<player.stacks.length;si++){
+    let s=player.stacks[si];
+    if(!s.length) continue;
+    let dom=s[s.length-1];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) for(let o=0;o<4;o++){
+      let cells=getDominoCells(r,c,o);
+      if(!canPlace(dom,cells)) continue;
+      let [r0,c0]=cells[0],[r1,c1]=cells[1];
+      let h0=G.board[r0][c0].stack.length,h1=G.board[r1][c1].stack.length;
+      let t0=topOf(r0,c0),t1=topOf(r1,c1);
+      let score=(dom.a+dom.b);
+      score+=(h0+h1)*3;
+      let opp=player.clan==='p'?'t':'p';
+      if(h0>0&&t0.clan===opp) score+=4;
+      if(h1>0&&t1.clan===opp) score+=4;
+      if(score>bestScore){bestScore=score;best={si,dom,cells};}
+    }
+  }
+  if(!best){skipTurn();return;}
+  let useTotem=player.totemLeft>0&&bestScore>12&&Math.random()>0.5;
+  doPlace(best.dom,best.cells,useTotem);
+  if(useTotem) player.totemLeft--;
+  G.lastPlaced=null;G.awaitingTotem=false;
+  let s=player.stacks[best.si];
+  s.pop();
+  if(s.length===0) player.stacks.splice(best.si,1);
+  advanceTurn();
+}
+
+function calcScore(player){
+  // 1. Visible points on board: topmost half of each cell belonging to player's clan
+  let inPlay=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(cell.stack.length===0){
+      if(cell.clan===player.clan) inPlay+=cell.boardVal||0;
+    } else {
+      let top=cell.stack[cell.stack.length-1];
+      if(top.clan===player.clan) inPlay+=top.val||0;
+    }
+  }
+
+  // 2. Reserve: only the VISIBLE top domino of each stack (both halves)
+  let reserve=0;
+  for(let s of player.stacks){
+    if(s.length>0){
+      let top=s[s.length-1];
+      reserve+=(top.a||0)+(top.b||0);
+    }
+  }
+
+  // 3. Totem bonus: +1 per level of height above table.
+  // Board tile = level 1. Each domino layer above it adds 1.
+  // Totem is placed on a domino, so height = cell.stack.length + 1.
+  // We find locked cells where top clan === player, take the pair as one domino
+  let totem=0;
+  let counted=new Set();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(cell.locked&&cell.stack.length>0){
+      let top=cell.stack[cell.stack.length-1];
+      if(top.clan===player.clan){
+        let key=r+','+c;
+        if(!counted.has(key)){
+          counted.add(key);
+          // height above table: board=1, plus each domino layer
+          let height=cell.stack.length+1;
+          totem+=height;
+        }
+      }
+    }
+  }
+  // Each domino occupies 2 cells, so sum of both cells / 2 = score per domino
+  totem=Math.floor(totem/2);
+
+  // 4. Penalty: -1 per unused totem
+  let penalty=player.totemLeft*-1;
+
+  return{inPlay,reserve,totem:totem+penalty,total:inPlay+reserve+totem+penalty};
+}
+
+function endGame(){
+  G.over=true;
+  let sc=G.players.map((p,i)=>({...calcScore(p),name:p.name,clan:p.clan,idx:i}));
+  showScreen('end-screen');
+  let w=sc[0].total>sc[1].total?0:sc[1].total>sc[0].total?1:tieWinnerByHighestTotem();
+  document.getElementById('end-title').textContent=w===-1?'Tasapeli!':sc[w].name+' voittaa!';
+  let tbody=document.getElementById('score-body');tbody.innerHTML='';
+  sc.forEach((s,i)=>{
+    let tr=document.createElement('tr');
+    if(i===w) tr.className='winner';
+    let col=s.clan==='p'?P_COLOR:T_COLOR;
+    tr.innerHTML=`<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${col};margin-right:5px;vertical-align:-1px"></span>${s.name}</td><td>${s.inPlay}</td><td>${s.reserve}</td><td>${s.totem}</td><td><strong>${s.total}</strong></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function highestTotemLevel(player){
+  let highest=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(cell.locked&&cell.stack.length>0){
+      let top=cell.stack[cell.stack.length-1];
+      if(top.clan===player.clan) highest=Math.max(highest,cell.stack.length+1);
+    }
+  }
+  return highest;
+}
+
+function tieWinnerByHighestTotem(){
+  let h0=highestTotemLevel(G.players[0]);
+  let h1=highestTotemLevel(G.players[1]);
+  if(h0>h1) return 0;
+  if(h1>h0) return 1;
+  return -1;
+}
+
+function drawDominoOutlines(ctx,S){
+  let groups=new Map();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(cell.stack.length===0) continue;
+    let top=cell.stack[cell.stack.length-1];
+    if(!top.dominoId) continue;
+    if(!groups.has(top.dominoId)) groups.set(top.dominoId,[]);
+    groups.get(top.dominoId).push({r,c});
+  }
+  ctx.save();
+  ctx.strokeStyle='rgba(0,0,0,0.42)';
+  ctx.lineWidth=2.5;
+  for(let cells of groups.values()){
+    if(!cells.length) continue;
+    let minR=Math.min(...cells.map(p=>p.r));
+    let maxR=Math.max(...cells.map(p=>p.r));
+    let minC=Math.min(...cells.map(p=>p.c));
+    let maxC=Math.max(...cells.map(p=>p.c));
+    let x=minC*S+2.5;
+    let y=minR*S+2.5;
+    let w=(maxC-minC+1)*S-5;
+    let h=(maxR-minR+1)*S-5;
+    ctx.beginPath();ctx.roundRect(x,y,w,h,5);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDominoSeamCovers(ctx,S){
+  let groups=new Map();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(cell.stack.length===0) continue;
+    let top=cell.stack[cell.stack.length-1];
+    if(!top.dominoId) continue;
+    if(!groups.has(top.dominoId)) groups.set(top.dominoId,[]);
+    groups.get(top.dominoId).push({r,c,top,height:cell.stack.length});
+  }
+  ctx.save();
+  for(let cells of groups.values()){
+    if(cells.length!==2) continue;
+    let [a,b]=cells;
+    let sameRow=a.r===b.r, sameCol=a.c===b.c;
+    if(!sameRow&&!sameCol) continue;
+    let top=a.top;
+    let fillColor=top.clan==='p'?P_COLOR:T_COLOR;
+    if(a.height>1) fillColor=top.clan==='p'?P_DARK:T_DARK;
+    ctx.fillStyle=fillColor;
+    if(sameRow){
+      let seamX=(Math.min(a.c,b.c)+1)*S;
+      let y=a.r*S;
+      ctx.fillRect(seamX-3,y+3,6,S-6);
+    } else {
+      let x=a.c*S;
+      let seamY=(Math.min(a.r,b.r)+1)*S;
+      ctx.fillRect(x+3,seamY-3,S-6,6);
+    }
+  }
+  ctx.restore();
+}
+
+function drawTotemSymbols(ctx,S){
+  let symbols=new Map();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let cell=G.board[r][c];
+    if(!cell.locked||cell.stack.length===0) continue;
+    let top=cell.stack[cell.stack.length-1];
+    if(!top.dominoId) continue;
+    if(!symbols.has(top.dominoId)) symbols.set(top.dominoId,[]);
+    symbols.get(top.dominoId).push({r,c});
+  }
+  for(let cells of symbols.values()){
+    if(cells.length<2) continue;
+    let a=cells[0],b=cells[1];
+    let cx=((a.c+b.c+1)*S)/2;
+    let cy=((a.r+b.r+1)*S)/2;
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,0.35)';
+    ctx.shadowBlur=5;
+    ctx.fillStyle='#facc15';
+    ctx.strokeStyle='rgba(0,0,0,0.72)';
+    ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(cx,cy,S*0.16,0,Math.PI*2);ctx.fill();ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,0.95)';
+    ctx.beginPath();ctx.arc(cx,cy,S*0.055,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
+
+function renderBoard(){
+  const cv=document.getElementById('board-canvas');
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const S=CELL;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    let x=c*S,y=r*S;
+    let cell=G.board[r][c];
+    let top=topOf(r,c);
+    let fillColor,textColor,val;
+    if(cell.stack.length===0){
+      fillColor=cell.clan==='p'?P_LIGHT:T_LIGHT;
+      textColor=cell.clan==='p'?P_DARK:T_DARK;
+      val=cell.boardVal;
+    } else {
+      fillColor=top.clan==='p'?P_COLOR:T_COLOR;
+      textColor='#fff';
+      val=top.val;
+      if(top.height>1){fillColor=top.clan==='p'?P_DARK:T_DARK;}
+    }
+    ctx.fillStyle=fillColor;
+    ctx.beginPath();ctx.roundRect(x+1,y+1,S-2,S-2,3);ctx.fill();
+    if(cell.locked){
+      ctx.strokeStyle='#FFD700';ctx.lineWidth=2;
+      ctx.beginPath();ctx.roundRect(x+2,y+2,S-4,S-4,2);ctx.stroke();
+    }
+    ctx.fillStyle=textColor;
+    ctx.font=`800 ${S*0.62}px 'Barlow Condensed','Arial Narrow',Arial,sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(val===0?'':String(val),x+S/2,y+S/2);
+    if(top.height>1){
+      ctx.fillStyle='rgba(255,255,255,0.85)';
+      ctx.font=`700 ${S*0.22}px 'Barlow Condensed','Arial Narrow',Arial,sans-serif`;
+      ctx.textAlign='right';ctx.textBaseline='top';
+      ctx.fillText('×'+top.height,x+S-5,y+5);
+    }
+  }
+  // Tile borders
+  ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=2;
+  for(let i=2;i<=4;i+=2){
+    ctx.beginPath();ctx.moveTo(i*S,0);ctx.lineTo(i*S,ROWS*S);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*S);ctx.lineTo(COLS*S,i*S);ctx.stroke();
+  }
+  drawDominoSeamCovers(ctx,S);
+  drawDominoOutlines(ctx,S);
+  drawTotemSymbols(ctx,S);
+  // Hover preview
+  if(G.hover&&G.selDom&&G.phase==='place'){
+    let cells=getDominoCells(G.hover[0],G.hover[1],G.orient);
+    let ok=canPlace(G.selDom,cells);
+    ctx.globalAlpha=0.4;
+    for(let i=0;i<2;i++){
+      let [cr,cc]=cells[i];
+      if(cr<0||cr>=ROWS||cc<0||cc>=COLS) continue;
+      ctx.fillStyle=ok?'#1D9E75':'#E24B4A';
+      ctx.fillRect(cc*S+2,cr*S+2,S-4,S-4);
+    }
+    ctx.globalAlpha=1;
+  }
+}
+
+function renderReserves(){
+  let el=document.getElementById('reserves');el.innerHTML='';
+  G.players.forEach((p,pi)=>{
+    let panel=document.createElement('div');
+    panel.className='reserve-panel'+(pi===G.current?' active-player':'');
+    let col=p.clan==='p'?P_COLOR:T_COLOR;
+    panel.style.borderColor=pi===G.current?col:col+'55';
+    let hdr=document.createElement('div');hdr.className='reserve-header';
+    hdr.innerHTML=`<span class="pname" style="color:${col}">${p.name}</span>`;
+    panel.appendChild(hdr);
+    let wrap=document.createElement('div');wrap.className='stacks-wrap';
+    p.stacks.forEach((s,si)=>{
+      if(!s.length) return;
+      let top=s[s.length-1];
+      let grp=document.createElement('div');grp.className='stack-group';
+      let btn=document.createElement('div');
+      btn.className='domino-btn'+(pi===G.current&&G.selStack===si?' sel':'');
+      btn.style.background=col;
+      let va=top.a===0?'':String(top.a),vb=top.b===0?'':String(top.b);
+      btn.innerHTML=`<div class="dh" style="color:#fff;border-bottom:1.5px solid rgba(255,255,255,0.3)">${va}</div><div class="dh" style="color:#fff">${vb}</div>`;
+      let canClick=pi===G.current&&!G.awaitingTotem&&(G.phase==='select'||G.phase==='place'||(G.phase==='skip_choose'&&s.length>1));
+      if(canClick){
+        btn.onclick=()=>{
+          if(G.phase==='skip_choose'){chooseStackToSetAside(si);return;}
+          if(G.selStack===si&&G.phase==='place'){rotateSelectedDomino();}
+          else{G.selStack=si;G.selDom=top;G.hover=null;G.phase='place';setStatus('Pyöritä dominoa klikkaamalla sitä uudelleen tai klikkaa pelilautaa','info');renderAll();}
+        };
+      } else {btn.style.opacity='0.55';btn.style.cursor='default';}
+      let cnt=document.createElement('div');cnt.className='stack-cnt';cnt.textContent='×'+s.length;
+      grp.appendChild(btn);grp.appendChild(cnt);wrap.appendChild(grp);
+    });
+    // Totem dots as vertical column at same height as domino buttons
+    let totemCol=document.createElement('div');
+    totemCol.className='totem-dots';
+    for(let d=0;d<2;d++){
+      let dot=document.createElement('span');
+      dot.className='totem-dot'+(d>=p.totemLeft?' used':'');
+      dot.style.color=col;
+      totemCol.appendChild(dot);
+    }
+    wrap.appendChild(totemCol);
+    panel.appendChild(wrap);el.appendChild(panel);
+  });
+}
+
+function renderAll(){
+  renderBoard();renderReserves();
+  let p=G.players[G.current];
+  let col=p.clan==='p'?P_COLOR:T_COLOR;
+  document.getElementById('turn-name').style.color=col;
+  document.getElementById('turn-name').textContent=p.name;
+  const skipBtn=document.getElementById('btn-skip');
+  if(skipBtn){
+    const isAi=G.players[G.current].type==='ai';
+    const noMoves=!hasAnyMove(G.players[G.current]);
+    skipBtn.style.display=(isAi||!noMoves)?'none':'block';
+  }
+  renderSelectedDomino();
+}
+
+function renderSelectedDomino(){
+  const tray=document.getElementById('domino-tray');
+  const cv=document.getElementById('selected-domino-canvas');
+  const txt=document.getElementById('domino-tray-text');
+  const cb=document.getElementById('totem-checkbox');
+  if(!tray||!cv) return;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const p=G.players&&G.players[G.current];
+  const isAi=p&&p.type==='ai';
+  if(cb){
+    cb.disabled=!G.selDom||isAi||!p||p.totemLeft<=0;
+    if(cb.disabled) cb.checked=false;
+    const label=cb.closest('label');
+    if(label){
+      label.style.opacity=cb.disabled?'0.45':'1';
+      // update dot display in label
+      let dots='';
+      if(p) for(let d=0;d<2;d++) dots+=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid currentColor;margin-left:3px;opacity:${d<p.totemLeft?1:0.18}"></span>`;
+      const labelSpan=label.querySelector('.totem-label-text');
+      if(labelSpan) labelSpan.innerHTML='Aseta toteemi'+dots;
+    }
+  }
+  if(!G.selDom||isAi){
+    ctx.fillStyle='rgba(0,0,0,0.08)';
+    ctx.beginPath();ctx.roundRect(12,12,72,72,8);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,0.35)';
+    ctx.font="800 30px 'Barlow Condensed','Arial Narrow',Arial,sans-serif";
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('—',48,48);
+    if(txt) txt.textContent=isAi?'AI pelaa vuoroaan.':'Valitse pelialueelle sopiva domino reservistä.';
+    return;
+  }
+  if(txt) txt.textContent='Klikkaa dominoa pyörittääksesi. Kun asento on oikea, klikkaa pelilautaa sijoittaaksesi.';
+  const col=G.selDom.clan==='p'?P_COLOR:T_COLOR;
+  ctx.fillStyle=col;
+  ctx.strokeStyle='rgba(255,255,255,0.45)';
+  ctx.lineWidth=2;
+  ctx.font="800 30px 'Barlow Condensed','Arial Narrow',Arial,sans-serif";
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  function half(x,y,w,h,val){
+    ctx.fillStyle=col;
+    ctx.beginPath();ctx.roundRect(x,y,w,h,6);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillText(val===0?'':String(val),x+w/2,y+h/2);
+  }
+  if(G.orient===0||G.orient===1){
+    let aFirst=G.orient===0;
+    half(10,28,38,40,aFirst?G.selDom.a:G.selDom.b);
+    half(48,28,38,40,aFirst?G.selDom.b:G.selDom.a);
+    ctx.beginPath();ctx.moveTo(48,30);ctx.lineTo(48,66);ctx.stroke();
+  }else{
+    let aFirst=G.orient===2;
+    half(28,10,40,38,aFirst?G.selDom.a:G.selDom.b);
+    half(28,48,40,38,aFirst?G.selDom.b:G.selDom.a);
+    ctx.beginPath();ctx.moveTo(30,48);ctx.lineTo(66,48);ctx.stroke();
+  }
+}
+
+function setOrient(o){G.orient=o;renderAll();}
+function setStatus(m,t){let e=document.getElementById('status-bar');e.textContent=m;e.className='status-bar'+(t?' '+t:'');}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showSetup(){showScreen('setup-screen');}
+
+let selectedCv=document.getElementById('selected-domino-canvas');
+if(selectedCv){
+  selectedCv.addEventListener('click',rotateSelectedDomino);
+}
+let cv=document.getElementById('board-canvas');
+cv.addEventListener('click',function(e){
+  if(G.over||G.phase!=='place'||!G.selDom) return;
+  if(G.players[G.current].type==='ai') return;
+  let rect=this.getBoundingClientRect();
+  let sx=this.width/rect.width,sy=this.height/rect.height;
+  let c=Math.floor((e.clientX-rect.left)*sx/CELL),r=Math.floor((e.clientY-rect.top)*sy/CELL);
+  if(r<0||r>=ROWS||c<0||c>=COLS) return;
+  G.hover=[r,c];
+  if(canPlace(G.selDom,getDominoCells(r,c,G.orient))){
+    placeSelected();
+  }else{
+    setStatus('Ei sovi tähän','error');
+    renderBoard();
+  }
+});
+cv.addEventListener('mousemove',function(e){
+  if(G.phase!=='place'||!G.selDom) return;
+  let rect=this.getBoundingClientRect();
+  let sx=this.width/rect.width,sy=this.height/rect.height;
+  let c=Math.floor((e.clientX-rect.left)*sx/CELL),r=Math.floor((e.clientY-rect.top)*sy/CELL);
+  G.hover=[r,c];renderBoard();
+});
+</script>
