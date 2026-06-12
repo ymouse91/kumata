@@ -10,7 +10,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 #app{width:100%;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));max-width:440px;margin:0 auto;font-family:'Barlow Condensed','Arial Narrow',Arial,sans-serif}
 h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
-.screen{display:none}.screen.active{display:block}
+.screen{display:none}.screen.active{display:block}.screen:not(.active){display:none!important}
 
 /* SETUP */
 #setup-screen{padding:18px 14px}
@@ -103,8 +103,8 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 
 @media (min-width:760px) and (orientation:landscape){
   #app{max-width:960px;height:100dvh;display:flex;align-items:center;justify-content:center}
-  #setup-screen{width:min(420px,100%);margin:0 auto}
-  #game-screen{width:100%;padding:8px;display:grid;grid-template-columns:minmax(360px,520px) minmax(320px,380px);grid-template-rows:auto auto;column-gap:28px;row-gap:12px;align-items:center;justify-content:center}
+  #setup-screen{width:420px;max-width:100%;flex:0 0 420px;margin:0 auto}
+  #game-screen.active{width:100%;padding:8px;display:grid;grid-template-columns:minmax(360px,520px) minmax(320px,380px);grid-template-rows:auto auto;column-gap:28px;row-gap:12px;align-items:center;justify-content:center}
   .game-layout{display:contents}
   .board-column{grid-column:1;grid-row:1 / span 2;display:flex;justify-content:flex-end}
   .side-column{grid-column:2;grid-row:2;align-self:start}

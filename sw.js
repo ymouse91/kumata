@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kumata-v1';
+const CACHE_NAME = 'kumata-v2';
 const APP_SHELL = [
   './',
   './index.html',
