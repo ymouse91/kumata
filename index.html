@@ -211,7 +211,7 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 <div id="end-screen" class="screen">
   <div class="end-title" id="end-title">Peli päättyi!</div>
   <table class="score-table">
-    <thead><tr><th>Pelaaja</th><th>Laudalla</th><th>Reservi</th><th>Tooteemi</th><th>Yht.</th></tr></thead>
+    <thead><tr><th>Pelaaja</th><th>Laudalla</th><th>Reservi</th><th>Toteemi</th><th>Yht.</th></tr></thead>
     <tbody id="score-body"></tbody>
   </table>
   <button class="btn-restart" onclick="showSetup()">Pelaa uudelleen</button>
@@ -564,7 +564,7 @@ function toggleTotem(){
   if(player.totemLeft<=0||G.selDom===null) return;
   G.pendingTotem=!G.pendingTotem;
   renderAll();
-  setStatus(G.pendingTotem?'Tooteemi asetetaan dominon kanssa – napsauta lauta':'Tooteemi peruttu','info');
+  setStatus(G.pendingTotem?'Toteemi asetetaan dominon kanssa – napsauta lauta':'Toteemi peruttu','info');
 }
 
 function finishWithoutTotem(){
