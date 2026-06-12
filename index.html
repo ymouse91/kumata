@@ -539,6 +539,8 @@ function skipTurn(){
   let player=G.players[G.current];
   if(hasAnyMove(player)){setStatus('Sinulla on mahdollinen siirto!','error');return;}
   if(!canCreateNewStack(player)){endGame();return;}
+  // If all stacks have exactly 1 domino, we cannot create a new stack → end game
+  if(player.stacks.every(s=>s.length<=1)){endGame();return;}
   // Trigger "choose a stack to set aside" mode
   G.phase='skip_choose';
   setStatus('Et voi sijoittaa – valitse pino siirrettäväksi sivuun','error');
@@ -592,7 +594,7 @@ function advanceTurn(){
   } else {
     // End condition 2: human has no moves and can't create new stack either
     if(!hasAnyMove(np)){
-      if(!canCreateNewStack(np)){endGame();return;}
+      if(!canCreateNewStack(np)||np.stacks.every(s=>s.length<=1)){endGame();return;}
       // Auto-trigger skip mode for human
       G.phase='skip_choose';
       setStatus('Et voi sijoittaa – valitse pino siirrettäväksi sivuun','error');
@@ -604,7 +606,7 @@ function advanceTurn(){
 function aiTurn(){
   let player=G.players[G.current];
   if(!hasAnyMove(player)){
-    if(!canCreateNewStack(player)){endGame();return;}
+    if(!canCreateNewStack(player)||player.stacks.every(s=>s.length<=1)){endGame();return;}
     // AI automatically picks first available stack to set aside
     let moved=false;
     for(let i=0;i<player.stacks.length;i++){
