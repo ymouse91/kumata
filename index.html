@@ -79,7 +79,9 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 
 /* END */
 #end-screen{padding:20px 16px;text-align:center}
-.end-title{font-size:26px;font-weight:700;margin-bottom:20px;color:var(--color-text-primary);letter-spacing:-0.5px}
+.end-title{font-size:26px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);letter-spacing:-0.5px}
+.end-board-wrap{display:flex;justify-content:center;margin-bottom:16px}
+#end-board-canvas{width:min(240px,78vw);height:auto;border-radius:8px;box-shadow:0 2px 12px rgba(15,23,42,0.12)}
 .score-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px}
 .score-table th{font-weight:600;padding:8px 6px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary);font-size:12px;text-transform:uppercase;letter-spacing:0.4px}
 .score-table td{padding:10px 6px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
@@ -210,6 +212,7 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 
 <div id="end-screen" class="screen">
   <div class="end-title" id="end-title">Peli päättyi!</div>
+  <div class="end-board-wrap"><canvas id="end-board-canvas" width="240" height="240" aria-label="Pelin lopullinen lauta"></canvas></div>
   <table class="score-table">
     <thead><tr><th>Pelaaja</th><th>Laudalla</th><th>Reservi</th><th>Toteemi</th><th>Yht.</th></tr></thead>
     <tbody id="score-body"></tbody>
@@ -506,6 +509,18 @@ function hasAnyMove(player){
   return false;
 }
 
+function countLegalMoves(player){
+  let count=0;
+  for(let s of player.stacks){
+    if(!s.length) continue;
+    let dom=s[s.length-1];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) for(let o=0;o<4;o++){
+      if(canPlace(dom,getDominoCells(r,c,o))) count++;
+    }
+  }
+  return count;
+}
+
 function doPlace(dom,cells,withTotem){
   let [r0,c0]=cells[0],[r1,c1]=cells[1];
   G.board[r0][c0].stack.push({clan:dom.clan,val:dom.a,dominoId:dom.id});
@@ -549,6 +564,158 @@ function skipTurn(){
 
 function canCreateNewStack(player){
   return player.stacks.some(s=>s.length>1);
+}
+
+function cloneBoard(board){
+  return board.map(row=>row.map(cell=>({
+    clan:cell.clan,
+    boardVal:cell.boardVal,
+    locked:cell.locked,
+    stack:cell.stack.map(half=>({...half}))
+  })));
+}
+
+function cloneStacks(stacks){
+  return stacks.map(stack=>stack.slice());
+}
+
+function snapshotGame(){
+  return {
+    board:cloneBoard(G.board),
+    stacks:G.players.map(p=>cloneStacks(p.stacks)),
+    totems:G.players.map(p=>p.totemLeft)
+  };
+}
+
+function restoreGame(snapshot){
+  G.board=snapshot.board;
+  G.players.forEach((p,i)=>{
+    p.stacks=snapshot.stacks[i];
+    p.totemLeft=snapshot.totems[i];
+  });
+}
+
+function scoreLead(playerIndex){
+  let own=calcScore(G.players[playerIndex]).total;
+  let opp=calcScore(G.players[(playerIndex+1)%2]).total;
+  return own-opp;
+}
+
+function applyAiCandidate(playerIndex,si,dom,cells,useTotem){
+  let player=G.players[playerIndex];
+  doPlace(dom,cells,useTotem);
+  if(useTotem) player.totemLeft--;
+  let stack=player.stacks[si];
+  stack.pop();
+  if(stack.length===0) player.stacks.splice(si,1);
+}
+
+function evaluateAiPosition(playerIndex){
+  let player=G.players[playerIndex];
+  let opp=G.players[(playerIndex+1)%2];
+  let lead=scoreLead(playerIndex);
+  let ownMoves=countLegalMoves(player);
+  let oppMoves=countLegalMoves(opp);
+  let ownReserve=player.stacks.length;
+  let oppReserve=opp.stacks.length;
+  return lead+(ownMoves-oppMoves)*0.08+(ownReserve-oppReserve)*0.2;
+}
+
+function canAiUseTotem(playerIndex,dom,cells){
+  if(G.players[playerIndex].totemLeft<=0) return false;
+  if(dom.a===0||dom.b===0) return false;
+  let [r0,c0]=cells[0],[r1,c1]=cells[1];
+  let h0=G.board[r0][c0].stack.length,h1=G.board[r1][c1].stack.length;
+  if(h0===0||h1===0) return false;
+  let finalHeight=Math.min(h0,h1)+1;
+  let value=(dom.a||0)+(dom.b||0);
+  return finalHeight>=2&&value>=4;
+}
+
+function quickMoveScore(playerIndex,dom,cells,useTotem){
+  let player=G.players[playerIndex];
+  let oppClan=G.players[(playerIndex+1)%2].clan;
+  let [r0,c0]=cells[0],[r1,c1]=cells[1];
+  let h0=G.board[r0][c0].stack.length,h1=G.board[r1][c1].stack.length;
+  let t0=topOf(r0,c0),t1=topOf(r1,c1);
+  let score=(dom.a||0)+(dom.b||0)+(h0+h1)*2;
+  if(h0>0&&t0.clan===oppClan) score+=4;
+  if(h1>0&&t1.clan===oppClan) score+=4;
+  if(useTotem) score+=Math.max(h0,h1)+2-player.totemLeft*0.2;
+  return score;
+}
+
+function bestReplyScore(playerIndex){
+  let replyIndex=(playerIndex+1)%2;
+  let replyPlayer=G.players[replyIndex];
+  let worstScore=Infinity;
+
+  if(!hasAnyMove(replyPlayer)){
+    if(!canCreateNewStack(replyPlayer)||replyPlayer.stacks.every(s=>s.length<=1)){
+      return evaluateAiPosition(playerIndex)+4;
+    }
+    for(let si=0;si<replyPlayer.stacks.length;si++){
+      let stack=replyPlayer.stacks[si];
+      if(!stack||stack.length<=1) continue;
+      let snapshot=snapshotGame();
+      let dom=replyPlayer.stacks[si].pop();
+      replyPlayer.stacks.push([dom]);
+      worstScore=Math.min(worstScore,evaluateAiPosition(playerIndex));
+      restoreGame(snapshot);
+    }
+    return worstScore===Infinity?evaluateAiPosition(playerIndex):worstScore;
+  }
+
+  let replies=[];
+  for(let si=0;si<replyPlayer.stacks.length;si++){
+    let s=replyPlayer.stacks[si];
+    if(!s.length) continue;
+    let dom=s[s.length-1];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) for(let o=0;o<4;o++){
+      let cells=getDominoCells(r,c,o);
+      if(!canPlace(dom,cells)) continue;
+      for(let useTotem of [false,true]){
+        if(useTotem&&!canAiUseTotem(replyIndex,dom,cells)) continue;
+        replies.push({si,dom,cells,useTotem,score:quickMoveScore(replyIndex,dom,cells,useTotem)});
+      }
+    }
+  }
+
+  replies.sort((a,b)=>b.score-a.score);
+  for(let reply of replies.slice(0,10)){
+    let snapshot=snapshotGame();
+    applyAiCandidate(replyIndex,reply.si,reply.dom,reply.cells,reply.useTotem);
+    worstScore=Math.min(worstScore,evaluateAiPosition(playerIndex));
+    restoreGame(snapshot);
+  }
+  return worstScore===Infinity?evaluateAiPosition(playerIndex):worstScore;
+}
+
+function simulateAiMove(playerIndex,si,dom,cells,useTotem){
+  let snapshot=snapshotGame();
+  applyAiCandidate(playerIndex,si,dom,cells,useTotem);
+  let immediate=evaluateAiPosition(playerIndex);
+  let afterReply=bestReplyScore(playerIndex);
+  restoreGame(snapshot);
+  return immediate*0.25+afterReply*0.75;
+}
+
+function chooseBestAiStackToSetAside(player){
+  let best=-1,bestScore=-Infinity;
+  for(let si=0;si<player.stacks.length;si++){
+    let stack=player.stacks[si];
+    if(!stack||stack.length<=1) continue;
+    let savedStacks=cloneStacks(player.stacks);
+    let dom=player.stacks[si].pop();
+    player.stacks.push([dom]);
+    let score=countLegalMoves(player)*2+stackTopTotal(player.stacks);
+    player.stacks=savedStacks;
+    if(score>bestScore){
+      bestScore=score;
+      best=si;
+    }
+  }
+  return best;
 }
 
 function chooseStackToSetAside(si){
@@ -607,22 +774,15 @@ function aiTurn(){
   let player=G.players[G.current];
   if(!hasAnyMove(player)){
     if(!canCreateNewStack(player)||player.stacks.every(s=>s.length<=1)){endGame();return;}
-    // AI automatically picks first available stack to set aside
-    let moved=false;
-    for(let i=0;i<player.stacks.length;i++){
-      if(player.stacks[i].length>1){
-        let dom=player.stacks[i].pop();
-        if(player.stacks[i].length===0) player.stacks.splice(i,1);
-        player.stacks.push([dom]);
-        moved=true;
-        break;
-      }
-    }
-    if(!moved){endGame();return;}
+    let stackIndex=chooseBestAiStackToSetAside(player);
+    if(stackIndex<0){endGame();return;}
+    let dom=player.stacks[stackIndex].pop();
+    if(player.stacks[stackIndex].length===0) player.stacks.splice(stackIndex,1);
+    player.stacks.push([dom]);
     advanceTurn();
     return;
   }
-  let best=null,bestScore=-9999;
+  let best=null,bestScore=-Infinity;
   for(let si=0;si<player.stacks.length;si++){
     let s=player.stacks[si];
     if(!s.length) continue;
@@ -630,21 +790,17 @@ function aiTurn(){
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) for(let o=0;o<4;o++){
       let cells=getDominoCells(r,c,o);
       if(!canPlace(dom,cells)) continue;
-      let [r0,c0]=cells[0],[r1,c1]=cells[1];
-      let h0=G.board[r0][c0].stack.length,h1=G.board[r1][c1].stack.length;
-      let t0=topOf(r0,c0),t1=topOf(r1,c1);
-      let score=(dom.a+dom.b);
-      score+=(h0+h1)*3;
-      let opp=player.clan==='p'?'t':'p';
-      if(h0>0&&t0.clan===opp) score+=4;
-      if(h1>0&&t1.clan===opp) score+=4;
-      if(score>bestScore){bestScore=score;best={si,dom,cells};}
+      let score=simulateAiMove(G.current,si,dom,cells,false);
+      if(score>bestScore){bestScore=score;best={si,dom,cells,useTotem:false};}
+      if(canAiUseTotem(G.current,dom,cells)){
+        let totemScore=simulateAiMove(G.current,si,dom,cells,true);
+        if(totemScore>bestScore){bestScore=totemScore;best={si,dom,cells,useTotem:true};}
+      }
     }
   }
   if(!best){skipTurn();return;}
-  let useTotem=player.totemLeft>0&&bestScore>12&&Math.random()>0.5;
-  doPlace(best.dom,best.cells,useTotem);
-  if(useTotem) player.totemLeft--;
+  doPlace(best.dom,best.cells,best.useTotem);
+  if(best.useTotem) player.totemLeft--;
   G.lastPlaced=null;G.awaitingTotem=false;
   let s=player.stacks[best.si];
   s.pop();
@@ -710,6 +866,7 @@ function endGame(){
   showScreen('end-screen');
   let w=sc[0].total>sc[1].total?0:sc[1].total>sc[0].total?1:tieWinnerByHighestTotem();
   document.getElementById('end-title').textContent=w===-1?'Tasapeli!':sc[w].name+' voittaa!';
+  renderEndBoardPreview();
   let tbody=document.getElementById('score-body');tbody.innerHTML='';
   sc.forEach((s,i)=>{
     let tr=document.createElement('tr');
@@ -830,11 +987,10 @@ function drawTotemSymbols(ctx,S){
   }
 }
 
-function renderBoard(){
-  const cv=document.getElementById('board-canvas');
+function renderBoardCanvas(cv,S,showHover){
+  if(!cv) return;
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,cv.width,cv.height);
-  const S=CELL;
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     let x=c*S,y=r*S;
     let cell=G.board[r][c];
@@ -877,7 +1033,7 @@ function renderBoard(){
   drawDominoOutlines(ctx,S);
   drawTotemSymbols(ctx,S);
   // Hover preview
-  if(G.hover&&G.selDom&&G.phase==='place'){
+  if(showHover&&G.hover&&G.selDom&&G.phase==='place'){
     let cells=getDominoCells(G.hover[0],G.hover[1],G.orient);
     let ok=canPlace(G.selDom,cells);
     ctx.globalAlpha=0.4;
@@ -889,6 +1045,16 @@ function renderBoard(){
     }
     ctx.globalAlpha=1;
   }
+}
+
+function renderBoard(){
+  renderBoardCanvas(document.getElementById('board-canvas'),CELL,true);
+}
+
+function renderEndBoardPreview(){
+  const cv=document.getElementById('end-board-canvas');
+  if(!cv) return;
+  renderBoardCanvas(cv,cv.width/COLS,false);
 }
 
 function renderReserves(){
