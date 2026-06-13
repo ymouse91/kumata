@@ -1,4 +1,4 @@
-
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0891b2">
 <link rel="manifest" href="manifest.webmanifest">
@@ -106,6 +106,9 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 @media (min-width:760px) and (orientation:landscape){
   #app{max-width:960px;height:100dvh;display:flex;align-items:center;justify-content:center}
   #setup-screen{width:420px;max-width:100%;flex:0 0 420px;margin:0 auto}
+  #end-screen.active{width:min(720px,100%);padding:24px 24px}
+  #end-board-canvas{width:min(360px,42vw,calc(100dvh - 300px))}
+  .end-board-wrap{margin-bottom:18px}
   #game-screen.active{width:100%;padding:8px;display:grid;grid-template-columns:minmax(360px,520px) minmax(320px,380px);grid-template-rows:auto auto;column-gap:28px;row-gap:12px;align-items:center;justify-content:center}
   .game-layout{display:contents}
   .board-column{grid-column:1;grid-row:1 / span 2;display:flex;justify-content:flex-end}
@@ -1020,7 +1023,7 @@ function renderBoardCanvas(cv,S,showHover){
       ctx.fillStyle='rgba(255,255,255,0.85)';
       ctx.font=`700 ${S*0.22}px 'Barlow Condensed','Arial Narrow',Arial,sans-serif`;
       ctx.textAlign='right';ctx.textBaseline='top';
-      ctx.fillText('×'+top.height,x+S-5,y+5);
+      ctx.fillText('x'+top.height,x+S-5,y+5);
     }
   }
   // Tile borders
@@ -1085,7 +1088,7 @@ function renderReserves(){
           else{G.selStack=si;G.selDom=top;G.hover=null;G.phase='place';setStatus('Pyöritä dominoa klikkaamalla sitä uudelleen tai klikkaa pelilautaa','info');renderAll();}
         };
       } else {btn.style.opacity='0.55';btn.style.cursor='default';}
-      let cnt=document.createElement('div');cnt.className='stack-cnt';cnt.textContent='×'+s.length;
+      let cnt=document.createElement('div');cnt.className='stack-cnt';cnt.textContent='x'+s.length;
       grp.appendChild(btn);grp.appendChild(cnt);wrap.appendChild(grp);
     });
     // Totem dots as vertical column at same height as domino buttons
