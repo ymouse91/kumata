@@ -82,9 +82,13 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 .end-title{font-size:26px;font-weight:700;margin-bottom:12px;color:var(--color-text-primary);letter-spacing:-0.5px}
 .end-board-wrap{display:flex;justify-content:center;margin-bottom:16px}
 #end-board-canvas{width:min(240px,78vw);height:auto;border-radius:8px;box-shadow:0 2px 12px rgba(15,23,42,0.12)}
-.score-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px}
+.score-table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;table-layout:fixed}
+.score-table col.player-col{width:38%}
+.score-table col.score-col{width:15.5%}
 .score-table th{font-weight:600;padding:8px 6px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary);font-size:12px;text-transform:uppercase;letter-spacing:0.4px}
 .score-table td{padding:10px 6px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.score-table th:first-child,.score-table td:first-child{text-align:left}
+.score-table th:not(:first-child),.score-table td:not(:first-child){text-align:center}
 .score-table tr.winner td{font-weight:700;color:#0891b2}
 .score-table tr.winner td:last-child{font-size:17px}
 .btn-restart{padding:12px 32px;border-radius:12px;border:none;background:#0891b2;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
@@ -105,10 +109,27 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
 
 @media (min-width:760px) and (orientation:landscape){
   #app{max-width:960px;height:100dvh;display:flex;align-items:center;justify-content:center}
-  #setup-screen{width:420px;max-width:100%;flex:0 0 420px;margin:0 auto}
+  #setup-screen{width:560px;max-width:100%;flex:0 0 560px;margin:0 auto;padding:24px}
+  .setup-panel{padding:28px 30px 26px;border-radius:22px}
+  .game-title{font-size:68px;margin-bottom:6px}
+  .game-sub{font-size:20px;margin-bottom:22px}
+  .setup-preview{width:252px;gap:6px;padding:10px;border-radius:16px;margin-bottom:24px}
+  .preview-cell{height:56px;border-radius:9px;font-size:39px}
+  .setup-fields{gap:14px;margin-bottom:18px}
+  .player-row{padding:15px 16px;border-radius:14px}
+  .player-row label{font-size:18px}
+  .player-row select{font-size:17px;padding:9px 13px;border-radius:10px}
+  .setup-actions{gap:14px}
+  .btn-start{font-size:20px;padding:18px;border-radius:14px}
+  .btn-help{font-size:17px;padding:15px 20px;border-radius:14px}
   #end-screen.active{width:min(720px,100%);padding:24px 24px}
   #end-board-canvas{width:min(360px,42vw,calc(100dvh - 300px))}
   .end-board-wrap{margin-bottom:18px}
+  .score-table{font-size:18px;margin-bottom:24px}
+  .score-table th{font-size:14px;padding:10px 8px}
+  .score-table td{padding:12px 8px}
+  .score-table tr.winner td:last-child{font-size:22px}
+  .btn-restart{font-size:17px;padding:14px 40px}
   #game-screen.active{width:100%;padding:8px;display:grid;grid-template-columns:minmax(360px,520px) minmax(320px,380px);grid-template-rows:auto auto;column-gap:28px;row-gap:12px;align-items:center;justify-content:center}
   .game-layout{display:contents}
   .board-column{grid-column:1;grid-row:1 / span 2;display:flex;justify-content:flex-end}
@@ -116,7 +137,11 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
   .top-bar{grid-column:2;grid-row:1;padding:0;margin-bottom:0}
   #board-canvas{width:min(520px,calc(100dvh - 48px))}
   .board-wrap{margin:0}
-  .domino-tray{margin-bottom:10px}
+  .domino-tray{min-height:132px;padding:14px 16px;gap:16px;margin-bottom:12px}
+  #selected-domino-canvas{width:108px;height:108px;border-radius:12px}
+  .domino-tray-controls{font-size:15px;line-height:1.45}
+  .totem-check{gap:9px;margin-top:12px;font-size:15px}
+  .totem-check input{width:22px;height:22px}
   .reserves{grid-template-columns:1fr;gap:10px}
   .reserve-panel{padding:12px}
   .reserve-header .pname{font-size:15px}
@@ -217,6 +242,7 @@ h2.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,
   <div class="end-title" id="end-title">Peli päättyi!</div>
   <div class="end-board-wrap"><canvas id="end-board-canvas" width="240" height="240" aria-label="Pelin lopullinen lauta"></canvas></div>
   <table class="score-table">
+    <colgroup><col class="player-col"><col class="score-col"><col class="score-col"><col class="score-col"><col class="score-col"></colgroup>
     <thead><tr><th>Pelaaja</th><th>Laudalla</th><th>Reservi</th><th>Toteemi</th><th>Yht.</th></tr></thead>
     <tbody id="score-body"></tbody>
   </table>
